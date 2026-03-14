@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGIFY TECH | Pro Store</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --bg: #0b0f15; --cyan: #00f2ff; --pink: #ff00ff; --green: #00ff88; --gold: #ffd700; --card: #161b22; --red: #ff4a4a; --dark: #0d1117; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding-bottom: 50px; overflow-x: hidden; }
+        
+        .promo-banner { background: var(--pink); color: white; text-align: center; padding: 8px; font-weight: bold; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* BANNER BLACK FRIDAY */
+        #bf-highlight { display: none; background: linear-gradient(90deg, #000, #220022); border-bottom: 3px solid var(--pink); padding: 25px 5%; align-items: center; justify-content: center; gap: 30px; animation: glow 2s infinite alternate; }
+        @keyframes glow { from { box-shadow: 0 0 5px var(--pink); } to { box-shadow: 0 0 20px var(--pink); } }
+        .timer-box { background: rgba(255, 0, 255, 0.1); border: 1px solid var(--pink); padding: 10px; border-radius: 10px; text-align: center; min-width: 200px; }
+        #countdown { font-family: monospace; font-size: 24px; color: var(--pink); font-weight: bold; }
+        header { padding: 12px 5%; background: rgba(13, 17, 23, 0.95); border-bottom: 2px solid var(--cyan); position: sticky; top: 0; z-index: 999; backdrop-filter: blur(10px); }
+        .nav-top { display: flex; justify-content: space-between; align-items: center; gap: 15px; }
+        
+        .search-container { flex: 1; max-width: 300px; position: relative; }
+        .search-container input { width: 100%; padding: 10px 40px 10px 15px; background: #0d1117; border: 1px solid #333; border-radius: 20px; color: white; outline: none; transition: 0.3s; }
+        .search-container i { position: absolute; right: 15px; top: 12px; color: #555; }
+        .header-icons { display: flex; align-items: center; gap: 12px; }
+        .icon-group { display: flex; flex-direction: column; align-items: center; cursor: pointer; text-decoration: none; color: inherit; transition: 0.3s; }
+        .icon-group:hover { opacity: 0.7; transform: scale(1.1); }
+        .icon-btn { font-size: 20px; background: none; border: none; color: inherit; }
+        .label-txt { font-size: 8px; text-transform: uppercase; font-weight: bold; margin-top: 2px; }
+        .sidebar { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: var(--dark); border-right: 1px solid #333; z-index: 2005; transition: 0.4s; padding: 30px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; }
+        .sidebar.active { left: 0; }
+        .cat-btn-side { background: #1c2128; border: 1px solid #333; color: white; padding: 12px; border-radius: 10px; cursor: pointer; text-align: left; }
+        /* GRID E CARDS */
+        .container { padding: 30px 5%; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 25px; }
+        .card { background: var(--card); border: 1px solid #30363d; border-radius: 18px; padding: 15px; cursor: pointer; transition: 0.3s; position: relative; overflow: hidden; }
+        .card:hover { border-color: var(--cyan); transform: translateY(-5px); }
+        
+        /* FAIXA OFF DIAGONAL */
+        .ribbon-off { 
+            position: absolute; bottom: 10px; right: -30px; 
+            background: var(--green); color: black; 
+            font-weight: bold; font-size: 11px; 
+            padding: 5px 35px; transform: rotate(-45deg);
+            box-shadow: 0 0 10px rgba(0,255,136,0.3);
+            z-index: 10;
+        }
+        .img-box { width: 100%; height: 200px; background: #000; border-radius: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .img-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .badge-bf { position: absolute; top: 10px; right: 10px; background: var(--pink); color: white; font-size: 10px; font-weight: bold; padding: 4px 8px; border-radius: 5px; z-index: 11; }
+        #adm-panel { display: none; padding: 30px; background: var(--dark); border: 2px solid var(--gold); margin: 20px 5%; border-radius: 20px; }
+        .admin-section { background: #1c2128; padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #333; }
+        
+        input, textarea, select { width: 100%; padding: 12px; margin: 8px 0; background: #161b22; border: 1px solid #333; color: white; border-radius: 10px; box-sizing: border-box; }
+        .btn-buy { width: 100%; padding: 15px; background: var(--pink); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .modal-prod { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+        .modal-content { max-width: 800px; width: 95%; background: var(--card); border-radius: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 25px; padding: 30px; border: 1px solid var(--cyan); position: relative; max-height: 90vh; overflow-y: auto; }
+        
+        .personalizacao-badge { background: rgba(0, 255, 136, 0.1); color: var(--green); padding: 10px; border-radius: 10px; font-size: 13px; margin: 10px 0; border: 1px dashed var(--green); display: flex; align-items: center; gap: 10px; }
+        footer { padding: 40px 5%; text-align: center; background: #0d1117; border-top: 1px solid #333; color: #555; font-size: 13px; }
+        @media (max-width: 768px) { .nav-top { flex-wrap: wrap; } .modal-content { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="promo-banner">?? AGIFY TECH - O SEU UNIVERSO GEEK PARTICULAR</div>
+    <div id="bf-highlight">
+        <div style="width: 120px; height: 120px; background: #000; border-radius: 15px; overflow: hidden; border: 1px solid var(--pink);">
+            <img id="bf-img" src="" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+        <div>
+            <span style="color: var(--pink); font-size: 11px; font-weight: bold;"><i class="fas fa-bolt"></i> DESTAQUE DO DIA</span>
+            <h2 id="bf-title" style="margin: 5px 0;"></h2>
+            <div id="countdown" style="font-size: 20px; margin-bottom: 10px;">00:00:00</div>
+            <button id="bf-link" class="btn-buy" style="width: auto; padding: 10px 25px; font-size: 12px;">GARANTIR AGORA</button>
+        </div>
+    </div>
+    <header>
+        <div class="nav-top">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <button class="icon-btn" onclick="toggleSidebar()" style="color:var(--cyan);"><i class="fas fa-bars"></i></button>
+                <div class="logo" style="cursor:pointer" onclick="location.reload()"><span style="color:var(--cyan); font-weight:bold; font-size:20px;">AGIFY</span><span style="color:var(--pink); font-weight:bold; font-size:20px;">TECH</span></div>
+            </div>
+            
+            <div class="search-container">
+                <input type="text" id="input-busca" placeholder="O que você busca?" oninput="buscarProdutos()">
+                <i class="fas fa-search"></i>
+            </div>
+            <div class="header-icons">
+                <a href="https://instagram.com/agifytech" target="_blank" class="icon-group" style="color:var(--pink);">
+                    <i class="fab fa-instagram icon-btn"></i><span class="label-txt">Instagram</span>
+                </a>
+                <div class="icon-group" onclick="abrirPortalCLT()" style="color:var(--cyan);">
+                    <i class="fas fa-user-circle icon-btn"></i><span class="label-txt">Login</span>
+                </div>
+                <div class="icon-group" onclick="abrirLoginAdm()" style="color:var(--gold);">
+                    <i class="fas fa-hand-rock icon-btn"></i><span class="label-txt">Admin</span>
+                </div>
+            </div>
+        </div>
+    </header>
+    <div class="sidebar" id="sidebar-menu">
+        <h3 style="color:var(--cyan);">Categorias</h3>
+        <div id="menu-categorias"></div>
+        <button onclick="toggleSidebar()" style="margin-top:20px; color:gray; background:none; border:none; cursor:pointer;">&larr; Voltar</button>
+    </div>
+    <div id="adm-panel">
+        <div class="admin-section">
+            <h4 style="color:var(--pink);">1. DESTAQUE BLACK FRIDAY</h4>
+            <select id="select-bf-item"></select>
+            <input type="datetime-local" id="data-bf-fim">
+            <button onclick="salvarDestaqueBF()" class="btn-buy">ATIVAR NO SITE</button>
+        </div>
+        <div class="admin-section">
+            <h4 style="color:var(--green);">2. CADASTRAR PRODUTO</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <input type="text" id="p-nome" placeholder="Nome">
+                <input type="text" id="p-preco" placeholder="Preço (Ex: 99,90)">
+                <input type="text" id="p-link" placeholder="Link NuvemShop">
+                <input type="number" id="p-off" placeholder="% OFF (Ex: 15)">
+            </div>
+            <select id="p-categoria-select"></select>
+            <input type="text" id="p-personaliza" placeholder="Personalização (Ex: 'Gravação Grátis')">
+            <textarea id="p-imgs" placeholder="Links das fotos (separados por vírgula)"></textarea>
+            <textarea id="p-desc" placeholder="Descrição"></textarea>
+            <button onclick="salvarProduto()" class="btn-buy" style="background:var(--green); color:black;">SALVAR PRODUTO</button>
+        </div>
+        <button onclick="logoff()" style="color:gray; background:none; border:none; cursor:pointer; width:100%;">Sair do Painel</button>
+    </div>
+    <div class="container" id="grid"></div>
+    <div id="modal-login" class="modal-prod">
+        <div style="background:var(--card); padding:35px; border-radius:30px; width:300px; text-align:center; border: 2px solid var(--gold);">
+            <h3 style="color:var(--gold);">ACESSO TITÃ</h3>
+            <input type="password" id="adm-pass" placeholder="SENHA">
+            <button class="btn-buy" onclick="loginAdm()" style="background:var(--gold); color:black;">ENTRAR</button>
+            <button onclick="fecharModais()" style="margin-top:15px; color:gray; background:none; border:none; cursor:pointer;">? Retornar</button>
+        </div>
+    </div>
+    <div id="modal-clt" class="modal-prod">
+        <div style="background:var(--card); padding:35px; border-radius:30px; width:300px; text-align:center; border: 2px solid var(--cyan);">
+            <h3 style="color:var(--cyan);">PORTAL CLIENTE</h3>
+            <input type="text" placeholder="E-mail"><input type="password" placeholder="Senha">
+            <button class="btn-buy" style="background:var(--cyan); color:black;">ENTRAR</button>
+            <button onclick="fecharModais()" style="margin-top:15px; color:gray; background:none; border:none; cursor:pointer;">? Retornar</button>
+        </div>
+    </div>
+    <div id="modal-produto" class="modal-prod">
+        <div class="modal-content">
+            <span onclick="fecharModais()" style="position:absolute; top:15px; right:20px; cursor:pointer; font-size:35px;">&times;</span>
+            <div class="img-box" style="height:300px;"><img id="m-img-main" src=""></div>
+            <div>
+                <h2 id="m-nome" style="color:var(--cyan);"></h2>
+                <h3 id="m-preco"></h3>
+                <div id="m-personalizacao"></div> 
+                <p id="m-desc" style="color:#aaa; font-size:14px; white-space:pre-wrap; margin-top:15px;"></p>
+                <button id="btn-comprar" class="btn-buy">COMPRAR NO SITE</button>
+            </div>
+        </div>
+    </div>
+    <footer><p>&copy; 2026 AGIFY TECH - O Universo Geek em suas mãos.</p></footer>
+    <script>
+        const SUPABASE_URL = 'https://ddbyznixijrkqpouqvkd.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkYnl6bml4aWpya3Fwb3VxdmtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMjA5NzYsImV4cCI6MjA4NzY5Njk3Nn0.CQIxKlpyaZwyVb43qRJuKSDYa1xzFdQwkrkYVW_G4AM';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let produtosFull = [];
+        let cats = ['Funko', 'Action Figure', 'Geek', 'Smartwatches'];
+        async function init() {
+            const { data } = await _supabase.from('produtos').select('*').order('created_at', { ascending: false });
+            produtosFull = data || [];
+            renderCats();
+            renderGrid(produtosFull);
+            checkBF();
+            if(sessionStorage.getItem('adm_on') === 'true') {
+                document.getElementById('adm-panel').style.display = 'block';
+                renderSelectBF();
+            }
+        }
+        function renderCats() {
+            document.getElementById('menu-categorias').innerHTML = ['Todos', ...cats].map(c => `<button class="cat-btn-side" onclick="filtrarCat('${c}')">${c}</button>`).join('');
+            document.getElementById('p-categoria-select').innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+        function renderSelectBF() {
+            const s = document.getElementById('select-bf-item');
+            s.innerHTML = '<option value="">Destaque Off</option>' + produtosFull.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        }
+        async function salvarProduto() {
+            const d = { 
+                name: document.getElementById('p-nome').value, 
+                price: document.getElementById('p-preco').value, 
+                url: document.getElementById('p-link').value, 
+                category: document.getElementById('p-categoria-select').value,
+                img: document.getElementById('p-imgs').value, 
+                description: document.getElementById('p-desc').value,
+                personaliza: document.getElementById('p-personaliza').value,
+                url_extra2: document.getElementById('p-off').value, // USANDO ESTA COLUNA PARA O % OFF
+                blackfriday: "false" 
+            };
+            await _supabase.from('produtos').insert([d]);
+            location.reload();
+        }
+        function renderGrid(l) {
+            document.getElementById('grid').innerHTML = l.map(p => `
+                <div class="card" onclick="verDetalhes('${p.id}')">
+                    ${p.blackfriday == "true" ? '<span class="badge-bf">OFERTA</span>' : ''}
+                    ${p.url_extra2 ? `<div class="ribbon-off">${p.url_extra2}% OFF</div>` : ''}
+                    <div class="img-box"><img src="${p.img.split(',')[0]}"></div>
+                    <h3 style="margin-top:10px; font-size:14px;">${p.name}</h3>
+                    <p style="color:var(--cyan); font-weight:bold;">R$ ${p.price}</p>
+                </div>
+            `).join('');
+        }
+        function verDetalhes(id) {
+            const p = produtosFull.find(x => x.id == id);
+            document.getElementById('m-nome').innerText = p.name;
+            document.getElementById('m-preco').innerText = `R$ ${p.price}`;
+            document.getElementById('m-desc').innerText = p.description;
+            document.getElementById('m-img-main').src = p.img.split(',')[0];
+            const areaP = document.getElementById('m-personalizacao');
+            areaP.innerHTML = p.personaliza ? `<div class="personalizacao-badge"><i class="fas fa-magic"></i> ${p.personaliza}</div>` : "";
+            document.getElementById('btn-comprar').onclick = () => window.open(p.url, '_blank');
+            document.getElementById('modal-produto').style.display = 'flex';
+        }
+        // FUNÇÕES DE SISTEMA
+        async function salvarDestaqueBF() {
+            const id = document.getElementById('select-bf-item').value;
+            const dataFim = document.getElementById('data-bf-fim').value;
+            await _supabase.from('produtos').update({ blackfriday: "false" }).neq('id', '0');
+            if(id) await _supabase.from('produtos').update({ blackfriday: "true", url_extra: dataFim }).eq('id', id);
+            location.reload();
+        }
+        function checkBF() {
+            const p = produtosFull.find(x => x.blackfriday == "true");
+            if(p && p.url_extra && new Date(p.url_extra).getTime() > new Date().getTime()) {
+                document.getElementById('bf-highlight').style.display = 'flex';
+                document.getElementById('bf-title').innerText = p.name;
+                document.getElementById('bf-img').src = p.img.split(',')[0].trim();
+                document.getElementById('bf-link').onclick = () => window.open(p.url, '_blank');
+                setInterval(() => {
+                    const dist = new Date(p.url_extra).getTime() - new Date().getTime();
+                    if(dist > 0) {
+                        const h = Math.floor(dist/3600000); const m = Math.floor((dist%3600000)/60000); const s = Math.floor((dist%60000)/1000);
+                        document.getElementById('countdown').innerText = `${h}h ${m}m ${s}s`;
+                    }
+                }, 1000);
+            }
+        }
+        function toggleSidebar() { document.getElementById('sidebar-menu').classList.toggle('active'); }
+        function abrirPortalCLT() { document.getElementById('modal-clt').style.display = 'flex'; }
+        function abrirLoginAdm() { document.getElementById('modal-login').style.display = 'flex'; }
+        function fecharModais() { document.querySelectorAll('.modal-prod').forEach(m => m.style.display = 'none'); }
+        function loginAdm() { if(document.getElementById('adm-pass').value === '080523') { sessionStorage.setItem('adm_on', 'true'); location.reload(); } }
+        function logoff() { sessionStorage.removeItem('adm_on'); location.reload(); }
+        function filtrarCat(c) { const f = (c === 'Todos') ? produtosFull : produtosFull.filter(p => p.category === c); renderGrid(f); toggleSidebar(); }
+        function buscarProdutos() {
+            const t = document.getElementById('input-busca').value.toLowerCase();
+            renderGrid(produtosFull.filter(p => p.name.toLowerCase().includes(t)));
+        }
+        init();
+    </script>
+</body>
+</html>
