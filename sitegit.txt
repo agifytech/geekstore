@@ -39,7 +39,14 @@
         .modal-content { max-width: 800px; width: 95%; background: var(--card); border-radius: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 25px; padding: 30px; border: 1px solid var(--cyan); position: relative; }
         
         .btn-buy { width: 100%; padding: 15px; background: var(--pink); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        footer { padding: 40px 5%; text-align: center; color: #555; font-size: 13px; }
+        
+        /* FOOTER E SELOS */
+        .footer-badges { display: flex; justify-content: center; gap: 20px; padding: 20px; flex-wrap: wrap; opacity: 0.6; border-top: 1px solid #333; margin-top: 30px; }
+        .badge-item { font-size: 24px; display: flex; align-items: center; gap: 8px; font-size: 12px; text-transform: uppercase; }
+        footer { padding: 20px 5%; text-align: center; color: #555; font-size: 13px; }
+        
+        /* LISTA ADM */
+        .adm-list-item { display: flex; justify-content: space-between; align-items: center; background: #0d1117; padding: 10px; border-radius: 8px; margin-bottom: 5px; font-size: 13px; }
         
         @media (max-width: 768px) { .modal-content { grid-template-columns: 1fr; } }
     </style>
@@ -84,16 +91,24 @@
 
     <div id="adm-panel">
         <h2 style="color:var(--gold);">Painel Administrativo</h2>
-        <div style="background:#1c2128; padding:20px; border-radius:15px;">
+        <div id="form-adm" style="background:#1c2128; padding:20px; border-radius:15px; margin-bottom: 20px;">
+            <input type="hidden" id="p-id">
             <input type="text" id="p-nome" placeholder="Nome do Produto">
             <input type="text" id="p-preco" placeholder="Preço (ex: 89,90)">
             <input type="text" id="p-link" placeholder="Link da Loja">
             <input type="text" id="p-off" placeholder="% Desconto (opcional)">
             <input type="text" id="p-imgs" placeholder="Link da Imagem">
             <textarea id="p-desc" placeholder="Descrição"></textarea>
-            <button onclick="salvarProduto()" class="btn-buy" style="background:var(--green); color:black;">CADASTRAR</button>
+            <div id="btn-container-adm">
+                <button onclick="salvarProduto()" class="btn-buy" style="background:var(--green); color:black;">CADASTRAR NOVO</button>
+            </div>
         </div>
-        <button onclick="logoff()" style="background:none; border:none; color:red; cursor:pointer; width:100%; margin-top:10px;">Sair</button>
+
+        <h3 style="color:var(--cyan);">Gerenciar Produtos</h3>
+        <div id="lista-adm-produtos" style="max-height: 300px; overflow-y: auto; background: #1c2128; padding: 10px; border-radius: 10px;">
+            </div>
+
+        <button onclick="logoff()" style="background:none; border:none; color:red; cursor:pointer; width:100%; margin-top:20px;">Sair do Painel</button>
     </div>
 
     <div class="container" id="grid"></div>
@@ -119,6 +134,14 @@
         </div>
     </div>
 
+    <div class="footer-badges">
+        <div class="badge-item"><i class="fas fa-shield-alt" style="color:var(--green)"></i> Site Seguro</div>
+        <div class="badge-item"><i class="fab fa-cc-visa"></i></div>
+        <div class="badge-item"><i class="fab fa-cc-mastercard"></i></div>
+        <div class="badge-item"><i class="fas fa-pix" style="color:var(--cyan)"></i> Pix</div>
+        <div class="badge-item"><i class="fas fa-lock"></i> SSL</div>
+    </div>
+
     <footer><p>&copy; 2026 AGIFY TECH</p></footer>
 
     <script>
@@ -135,7 +158,10 @@
             produtosFull = data || [];
             renderCats();
             renderGrid(produtosFull);
-            if(sessionStorage.getItem('adm_on') === 'true') document.getElementById('adm-panel').style.display = 'block';
+            if(sessionStorage.getItem('adm_on') === 'true') {
+                document.getElementById('adm-panel').style.display = 'block';
+                renderListaAdm();
+            }
         }
 
         function renderGrid(list) {
@@ -147,6 +173,56 @@
                     <p style="color:var(--cyan); font-weight:bold; margin:0;">R$ ${p.price}</p>
                 </div>
             `).join('');
+        }
+
+        function renderListaAdm() {
+            document.getElementById('lista-adm-produtos').innerHTML = produtosFull.map(p => `
+                <div class="adm-list-item">
+                    <span>${p.name}</span>
+                    <div>
+                        <button onclick="prepararEdicao('${p.id}')" style="background:var(--cyan); border:none; padding:5px 10px; border-radius:5px; cursor:pointer; margin-right:5px;"><i class="fas fa-edit"></i></button>
+                        <button onclick="excluirProduto('${p.id}')" style="background:var(--red); border:none; padding:5px 10px; border-radius:5px; cursor:pointer; color:white;"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function prepararEdicao(id) {
+            const p = produtosFull.find(x => x.id == id);
+            document.getElementById('p-id').value = p.id;
+            document.getElementById('p-nome').value = p.name;
+            document.getElementById('p-preco').value = p.price;
+            document.getElementById('p-link').value = p.url;
+            document.getElementById('p-imgs').value = p.img;
+            document.getElementById('p-desc').value = p.description;
+            document.getElementById('p-off').value = p.url_extra2 || '';
+            
+            document.getElementById('btn-container-adm').innerHTML = `
+                <button onclick="atualizarProduto()" class="btn-buy" style="background:var(--gold); color:black; margin-bottom:5px;">SALVAR ALTERAÇÕES</button>
+                <button onclick="location.reload()" style="background:none; border:none; color:gray; cursor:pointer; width:100%;">Cancelar Edição</button>
+            `;
+            window.scrollTo(0,0);
+        }
+
+        async function atualizarProduto() {
+            const id = document.getElementById('p-id').value;
+            const d = { 
+                name: document.getElementById('p-nome').value, 
+                price: document.getElementById('p-preco').value, 
+                url: document.getElementById('p-link').value, 
+                img: document.getElementById('p-imgs').value, 
+                description: document.getElementById('p-desc').value,
+                url_extra2: document.getElementById('p-off').value
+            };
+            const { error } = await _supabase.from('produtos').update(d).eq('id', id);
+            if(!error) location.reload();
+        }
+
+        async function excluirProduto(id) {
+            if(confirm("Tem certeza que deseja excluir este produto?")) {
+                const { error } = await _supabase.from('produtos').delete().eq('id', id);
+                if(!error) location.reload();
+            }
         }
 
         function verDetalhes(id) {
